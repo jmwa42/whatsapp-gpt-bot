@@ -1,0 +1,34 @@
+{
+  "school_name": "Jewel House School",
+  "location": "Kiungani Rd, Syokimau",
+  "opening_hours": "Mon–Fri 8am–5pm, Sat 8am–1pm",
+  "contact": {
+    "Main": "0719 767 957",
+    "Bursar": "0779 767 957",
+    "Admin": "0777 767 957",
+    "Head Teacher": "0778 767 957",
+    "Store or uniform": "0752 767 957"
+  },
+  "email": "admin@jewelhouseschool.com",
+  "website": "https://jewelhouseschool.com",
+  "services": {
+    "Admissions": "Ongoing for all classes",
+    "School Fees": "Available upon request",
+    "Uniform": "Available at the school store",
+    "Transport": "Provided within Syokimau & surrounding areas"
+  },
+  "academics": {
+    "Kindergarten": "Our Kindergarten program nurtures children aged 2–6 through play and early learning. Playgroup (2–3 years) fosters social and motor skills, Reception (3–4 years) builds curiosity, PP1 (4–5 years) introduces structured activities, and PP2 (5–6 years) prepares them for primary school. Focus is on joyful, holistic development in a safe environment.",
+    "Lower Primary": "Grades 1–3: Young minds blossom through structured play and early academics. A child-centered approach encourages creativity, motor skills, and confidence — making early schooling a journey of wonder and growth.",
+    "Upper Primary": "Grades 4–6: Learners experience a dynamic curriculum, hands-on projects, and personal attention. We cultivate critical thinking, character, and a passion for learning — every lesson is a step toward greatness.",
+    "Junior School": "Grades 7–9: Students face real challenges with support. Through academics, leadership, and co-curriculars, they build resilience, innovation, and integrity — values for lifelong success."
+  },
+  "Co-curricular Activities": {
+    "Football Academy": "0719 767 957",
+    "Ballet": "0779 767 957",
+    "Taekwondo": "0777 767 957",
+    "Swimming": "Dive into our fun, skill-building swim classes for learners of all levels! Games, badge achievements, safety skills, and certified instructors.",
+    "Journalism": "Our Journalism Program transforms curious beginners into confident visual storytellers using tech, editing tools, and real-world photo projects."
+  }
+}
+

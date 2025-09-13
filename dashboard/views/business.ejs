@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html><head><title>Edit Business Info</title></head><body>
+<h1>📝 Edit Business Info</h1>
+<form method="POST" action="/business">
+  <label>Opening Hours:<br><textarea name="opening_hours"><%= biz.opening_hours %></textarea></label><br>
+  <label>Location:<br><input name="location" value="<%= biz.location %>" /></label><br>
+  <label>Contact:<br><input name="contact" value="<%= biz.contact %>" /></label><br>
+  <h3>Price List</h3>
+  <% Object.entries(biz.price_list).forEach(([k,v]) => { %>
+    <input name="services" value="<%= k %>" /> <input name="prices" value="<%= v %>" /><br>
+  <% }) %>
+  <input name="services" /> <input name="prices" /><br>
+  <button type="submit">Save</button>
+</form>
+</body></html>
