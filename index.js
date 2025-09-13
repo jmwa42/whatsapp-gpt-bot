@@ -17,8 +17,10 @@ import { stkPush } from "./bot/mpesa.js";
 
 const { Client, LocalAuth } = pkg;
 
+// 🚀 Setup Express first
+const app = express();
 
-// ✅ WhatsApp client
+// 🚀 Setup WhatsApp client
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -26,9 +28,8 @@ const client = new Client({
   },
 });
 
-// ✅ QR code handling
+// ✅ QR Code route
 let latestQR = null;
-
 client.on("qr", (qr) => {
   latestQR = qr;
   console.log("📱 QR code generated. Visit /qr to scan it.");
@@ -36,25 +37,26 @@ client.on("qr", (qr) => {
 
 app.get("/qr", async (req, res) => {
   if (!latestQR) {
-    return res.send("<h2>No QR generated yet. Check back in a few seconds.</h2>");
+    return res.send("<h2>No QR generated yet. Check back soon.</h2>");
   }
-  try {
-    const qrImg = await qrcode.toDataURL(latestQR);
-    res.send(`
-      <html>
-        <head><title>WhatsApp QR</title></head>
-        <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
-          <div>
-            <h2 style="color:#fff;text-align:center;">Scan QR with WhatsApp</h2>
-            <img src="${qrImg}" />
-          </div>
-        </body>
-      </html>
-    `);
-  } catch (err) {
-    res.status(500).send("Error generating QR");
-  }
+  const qrImg = await qrcode.toDataURL(latestQR);
+  res.send(`<img src="${qrImg}" />`);
 });
+
+// ✅ Ready event
+client.on("ready", () => {
+  console.log("✅ WhatsApp client is ready!");
+});
+
+// Start WhatsApp
+client.initialize();
+
+// ✅ Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🌍 Server running on http://localhost:${PORT}`);
+});
+
 
 // ✅ WhatsApp events
 client.on("ready", () => {
