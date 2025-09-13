@@ -1,9 +1,9 @@
-import dotenv from "dotenv";
-dotenv.config();
-
-import express from "express";
+import pkg from "whatsapp-web.js";
 import qrcode from "qrcode";
-import { Client, LocalAuth } from "whatsapp-web.js";
+import dotenv from "dotenv";
+import express from "express";
+
+dotenv.config();
 
 import { handleMessage } from "./bot/gpt.js";
 import {
@@ -11,11 +11,12 @@ import {
   isBanned,
   banUser,
   unbanUser,
-  getUserHistory,
+  getUserHistory
 } from "./bot/storage.js";
 import { stkPush } from "./bot/mpesa.js";
 
-const app = express();
+const { Client, LocalAuth } = pkg;
+
 
 // ✅ WhatsApp client
 const client = new Client({
