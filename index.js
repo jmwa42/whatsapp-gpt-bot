@@ -51,13 +51,6 @@ client.on("ready", () => {
 // Start WhatsApp
 client.initialize();
 
-// ✅ Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🌍 Server running on http://localhost:${PORT}`);
-});
-
-
 // ✅ WhatsApp events
 client.on("ready", () => {
   console.log("✅ WhatsApp client is ready!");
