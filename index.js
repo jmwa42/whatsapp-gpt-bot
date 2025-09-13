@@ -16,32 +16,63 @@ import { stkPush } from './bot/mpesa.js';
 const { Client, LocalAuth } = pkg;
 
 // ✅ WhatsApp client setup
+import express from "express";
+import qrcode from "qrcode";
+import { Client, LocalAuth } from "whatsapp-web.js";
+
+const app = express();
+
+// WhatsApp client
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "/app/.wwebjs_auth" }),
+  authStrategy: new LocalAuth(),
   puppeteer: {
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage"
-    ]
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  },
+});
+
+// QR code route
+let latestQR = null;
+
+client.on("qr", (qr) => {
+  latestQR = qr;
+  console.log("📱 QR code generated. Visit /qr to scan it.");
+});
+
+app.get("/qr", async (req, res) => {
+  if (!latestQR) {
+    return res.send("<h2>No QR generated yet. Check back in a few seconds.</h2>");
+  }
+  try {
+    const qrImg = await qrcode.toDataURL(latestQR);
+    res.send(`
+      <html>
+        <head><title>WhatsApp QR</title></head>
+        <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
+          <div>
+            <h2 style="color:#fff;text-align:center;">Scan QR with WhatsApp</h2>
+            <img src="${qrImg}" />
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (err) {
+    res.status(500).send("Error generating QR");
   }
 });
 
-// Show QR only once if no session is saved
-client.on("qr", qr => {
-  qrcode.generate(qr, { small: true });
-  console.log("📱 Scan this QR with WhatsApp");
-});
-
+// WhatsApp ready event
 client.on("ready", () => {
-  console.log("✅ WhatsApp bot is ready!");
+  console.log("✅ WhatsApp client is ready!");
 });
 
-client.on("auth_failure", msg => {
-  console.error("❌ Auth failure:", msg);
+client.initialize();
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🌍 Server running on http://localhost:${PORT}`);
 });
+
 
 // ✅ Main message handler
 client.on('message', async (msg) => {
