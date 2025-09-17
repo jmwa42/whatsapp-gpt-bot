@@ -26,7 +26,7 @@ const client = new Client({
   authStrategy: new LocalAuth({ dataPath: AUTH_PARENT }),
   puppeteer: {
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
-    headless: false,   // ⬅️ force visible browser, needed on some servers
+    headless: true,   // ⬅️ force visible browser, needed on some servers
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
