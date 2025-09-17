@@ -17,7 +17,7 @@ import { stkPush } from "./bot/mpesa.js";
 
 const { Client, LocalAuth } = pkg;
 
-// 🚀 Setup Express first
+// 🚀 Setup Express
 const app = express();
 
 // 🚀 Setup WhatsApp client
@@ -40,7 +40,17 @@ app.get("/qr", async (req, res) => {
     return res.send("<h2>No QR generated yet. Check back soon.</h2>");
   }
   const qrImg = await qrcode.toDataURL(latestQR);
-  res.send(`<img src="${qrImg}" />`);
+  res.send(`
+    <html>
+      <head><title>WhatsApp QR</title></head>
+      <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
+        <div>
+          <h2 style="color:#fff;text-align:center;">Scan QR with WhatsApp</h2>
+          <img src="${qrImg}" />
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 // ✅ Ready event
@@ -48,14 +58,7 @@ client.on("ready", () => {
   console.log("✅ WhatsApp client is ready!");
 });
 
-// Start WhatsApp
-client.initialize();
-
-// ✅ WhatsApp events
-client.on("ready", () => {
-  console.log("✅ WhatsApp client is ready!");
-});
-
+// ✅ WhatsApp message handler
 client.on("message", async (msg) => {
   const number = msg.from;
   const text = msg.body.trim();
@@ -117,7 +120,7 @@ client.on("message", async (msg) => {
   msg.reply(reply);
 });
 
-// ✅ Start client
+// ✅ Start WhatsApp client (only once)
 client.initialize();
 
 // ✅ Start Express server
@@ -125,4 +128,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🌍 Server running on http://localhost:${PORT}`);
 });
-
