@@ -1,11 +1,9 @@
-# Use official Node LTS with Debian base
 FROM node:18-bullseye
 
-# Install Chromium & deps
+# Install dependencies for Chromium
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
-    libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
     libc6 \
@@ -31,31 +29,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     libxrender1 \
     xdg-utils \
-    chromium \
+    wget \
+    --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Install Playwright Chromium (much newer)
+RUN npm install -g playwright && npx playwright install chromium
 
-# Install deps
+WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
-
-# Copy rest
 COPY . .
 
-# Puppeteer envs → tell it to use system chromium
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV NODE_ENV=production
-
 EXPOSE 3000
-
-# If you want custom entrypoint script, keep this.
-# Make sure entrypoint.sh ends with: exec node index.js
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-
-# Or simpler (no script):
-# CMD ["node","index.js"]
+CMD ["node", "index.js"]
 

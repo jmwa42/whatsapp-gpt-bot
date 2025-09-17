@@ -11,22 +11,21 @@ const PORT = process.env.PORT || 8080;
 let latestQR = null;
 
 // --- WhatsApp Client ---
+import { Client, LocalAuth } from "whatsapp-web.js";
+import { executablePath } from "playwright";
+
 const client = new Client({
-  authStrategy: new LocalAuth({
-    dataPath: "/app/.wwebjs_auth",
-  }),
+  authStrategy: new LocalAuth({ dataPath: "/app/.wwebjs_auth" }),
   puppeteer: {
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
+    executablePath: executablePath("chromium"),
     headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--no-first-run",
-      "--no-zygote",
-      "--single-process",
       "--disable-gpu",
+      "--no-zygote",
+      "--disable-extensions",
     ],
   },
 });
