@@ -22,10 +22,13 @@ const { Client, LocalAuth } = pkg;
 const app = express();
 
 // ✅ Fix session folder for Railway
-const authPath = process.env.WA_DATA_PATH || "/tmp/.wwebjs_auth";
+// ✅ Fix session folder for Railway
+// Don't include ".wwebjs_auth" in the path, LocalAuth will append it automatically
+const baseAuthPath = process.env.WA_DATA_PATH || "/tmp";
+
 try {
-  fs.mkdirSync(authPath, { recursive: true });
-  console.log("✅ Auth folder ready:", authPath);
+  fs.mkdirSync(baseAuthPath, { recursive: true });
+  console.log("✅ Auth base folder ready:", baseAuthPath);
 } catch (err) {
   console.error("⚠️ Auth folder setup issue:", err.message);
 }
@@ -33,7 +36,7 @@ try {
 // 🚀 Setup WhatsApp client
 const client = new Client({
   authStrategy: new LocalAuth({
-    dataPath: authPath,
+    dataPath: baseAuthPath,  // LocalAuth will create .wwebjs_auth inside this
   }),
   puppeteer: {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
