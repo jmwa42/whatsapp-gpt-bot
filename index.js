@@ -75,11 +75,16 @@ client.on("ready", () => {
 
 // ✅ WhatsApp message handler
 client.on("message", async (msg) => {
-  console.log("📩 Incoming message raw:", msg); // full object
+  console.log("📩 Incoming message raw:", msg.body); // full object
+    if (msg.body.toLowerCase() === "ping") {
+    await msg.reply("pong 🏓");
+    }
+
   const number = msg.from;
   const text = msg.body.trim();
 
   console.log("📩 Incoming:", number, text);
+});
 
   // 🚫 Block banned users
   if (await isBanned(number)) {
