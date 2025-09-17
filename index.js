@@ -27,18 +27,22 @@ const client = new Client({
   puppeteer: {
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     headless: true,   // ⬅️ force visible browser, needed on some servers
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--single-process",
-      "--disable-gpu",
-      "--no-zygote",
-      "--disable-accelerated-2d-canvas",
-      "--disable-web-security",
-      "--window-size=1920,1080",
-      "--remote-debugging-port=9222"
-    ],
+args: [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-accelerated-2d-canvas",
+  "--disable-gpu",
+  "--single-process",
+  "--no-zygote",
+  "--disable-extensions",
+  "--disable-background-networking",
+  "--disable-background-timer-throttling",
+  "--disable-renderer-backgrounding",
+  "--disable-software-rasterizer",
+  "--mute-audio",
+],
+
   },
 });
 
@@ -51,15 +55,18 @@ client.on("qr", qr => {
 
 client.on("authenticated", () => {
   console.log("🔑 WhatsApp authenticated.");
-  // start readiness watchdog (30s)
-  startReadyWatchdog();
+  // Wait longer for ready event
+  const timeout = setTimeout(() => {
+    console.error("❌ READY DID NOT FIRE, forcing reload...");
+    client.destroy().then(() => client.initialize());
+  }, 60000); // 60s
+  
+  client.once("ready", () => {
+    clearTimeout(timeout);
+    console.log("✅ WhatsApp client is READY!");
+  });
 });
 
-client.on("auth_failure", msg => console.error("❌ auth_failure:", msg));
-client.on("ready", () => {
-  readyFired = true;
-  console.log("✅ WhatsApp client is READY!");
-});
 client.on("loading_screen", (pct, msg) => console.log("⏳ loading_screen:", pct, msg));
 client.on("change_state", state => console.log("🔄 change_state:", state));
 client.on("disconnected", reason => console.log("⚠️ disconnected:", reason));
