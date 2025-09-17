@@ -1,8 +1,9 @@
-// index.js
-const express = require("express");
-const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
-const QRCode = require("qrcode");
+// index.js (ESM version)
+import express from "express";
+import pkg from "whatsapp-web.js";
+const { Client, LocalAuth } = pkg;
+import qrcodeTerminal from "qrcode-terminal";
+import QRCode from "qrcode";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -12,7 +13,7 @@ let latestQR = null;
 // --- WhatsApp Client ---
 const client = new Client({
   authStrategy: new LocalAuth({
-    dataPath: "/app/.wwebjs_auth", // persist sessions in container volume
+    dataPath: "/app/.wwebjs_auth",
   }),
   puppeteer: {
     executablePath:
@@ -29,7 +30,7 @@ const client = new Client({
 client.on("qr", (qr) => {
   latestQR = qr;
   console.log("📱 QR RECEIVED (also available at /qr)");
-  qrcode.generate(qr, { small: true });
+  qrcodeTerminal.generate(qr, { small: true });
 });
 
 client.on("authenticated", () => {
@@ -78,7 +79,7 @@ app.listen(PORT, () => {
   console.log(`🌍 HTTP server on port ${PORT} — /qr`);
 });
 
-// --- Diagnostic watchdog (optional) ---
+// --- Diagnostic watchdog ---
 setTimeout(() => {
   if (!client.info) {
     console.error(
