@@ -1,149 +1,134 @@
-// index.js
+// diagnostic-index.js
 import pkg from "whatsapp-web.js";
-import qrcode from "qrcode"; // ✅ use this, not qrcode-terminal
-import dotenv from "dotenv";
+import qrcode from "qrcode";
 import express from "express";
 import fs from "fs";
-
+import path from "path";
+import dotenv from "dotenv";
 dotenv.config();
 
-import { handleMessage } from "./bot/gpt.js";
-import {
-  saveUserMessage,
-  isBanned,
-  banUser,
-  unbanUser,
-  getUserHistory,
-} from "./bot/storage.js";
-import { stkPush } from "./bot/mpesa.js";
-
 const { Client, LocalAuth } = pkg;
-
-// 🚀 Setup Express
 const app = express();
 
-// ✅ Session folder for Railway
-const baseAuthPath = process.env.WA_DATA_PATH || "/tmp";
+const PORT = process.env.PORT || 8080;
+const AUTH_PARENT = process.env.WA_DATA_PATH || "/app/.wwebjs_auth"; // use the same path you mounted
+
+// ensure folder exists
 try {
-  fs.mkdirSync(baseAuthPath, { recursive: true });
-  console.log("✅ Auth base folder ready:", baseAuthPath);
-} catch (err) {
-  console.error("⚠️ Auth folder setup issue:", err.message);
+  fs.mkdirSync(AUTH_PARENT, { recursive: true });
+  console.log("✅ Ensured WA_PATH exists:", AUTH_PARENT);
+} catch (e) {
+  console.error("⚠️ Could not ensure auth folder:", e.message);
 }
 
-// 🚀 Setup WhatsApp client
+// create client with explicit executable path and logging-friendly args
 const client = new Client({
-  authStrategy: new LocalAuth({
-    dataPath: baseAuthPath, // LocalAuth will create .wwebjs_auth inside this
-  }),
+  authStrategy: new LocalAuth({ dataPath: AUTH_PARENT }),
   puppeteer: {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--single-process",
+      "--disable-gpu",
+      "--no-zygote",
+      "--disable-accelerated-2d-canvas",
+      "--enable-logging",
+      "--v=1"
+    ],
   },
 });
 
-// ✅ QR Code route
-let latestQR = null;
-client.on("qr", (qr) => {
+// event logging
+client.on("qr", qr => {
   latestQR = qr;
-  console.log("📱 QR code generated. Visit /qr to scan it."); // 🔥 no QR dump in logs
+  console.log("📱 QR generated — visit /qr to scan (no QR dumped to logs).");
 });
 
-app.get("/qr", async (req, res) => {
-  if (!latestQR) {
-    return res.send("<h2>No QR generated yet. Check back soon.</h2>");
-  }
-  const qrImg = await qrcode.toDataURL(latestQR);
-  res.send(`
-    <html>
-      <head><title>WhatsApp QR</title></head>
-      <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
-        <div>
-          <h2 style="color:#fff;text-align:center;">Scan QR with WhatsApp</h2>
-          <img src="${qrImg}" />
-        </div>
-      </body>
-    </html>
-  `);
+client.on("authenticated", () => {
+  console.log("🔑 WhatsApp authenticated.");
+  // start readiness watchdog (30s)
+  startReadyWatchdog();
 });
 
-// ✅ Ready event
+client.on("auth_failure", msg => console.error("❌ auth_failure:", msg));
 client.on("ready", () => {
-  console.log("✅ WhatsApp client is ready!");
+  readyFired = true;
+  console.log("✅ WhatsApp client is READY!");
 });
+client.on("loading_screen", (pct, msg) => console.log("⏳ loading_screen:", pct, msg));
+client.on("change_state", state => console.log("🔄 change_state:", state));
+client.on("disconnected", reason => console.log("⚠️ disconnected:", reason));
+client.on("remote_session_saved", () => console.log("💾 remote_session_saved"));
 
-// ✅ Message handler
-client.on("message", async (msg) => {
-  const number = msg.from;
-  const text = msg.body.trim();
-
-  console.log("📩 Incoming:", number, text);
-
-  if (text.toLowerCase() === "ping") {
-    return msg.reply("pong 🏓");
-  }
-
-  if (await isBanned(number)) {
-    return msg.reply("🚫 You are banned from using this service.");
-  }
-
-  if (text.startsWith("/ban ")) {
-    const toBan = text.split(" ")[1];
-    await banUser(toBan);
-    return msg.reply(`🚫 ${toBan} has been banned.`);
-  }
-
-  if (text.startsWith("/unban ")) {
-    const toUnban = text.split(" ")[1];
-    await unbanUser(toUnban);
-    return msg.reply(`✅ ${toUnban} has been unbanned.`);
-  }
-
-  if (text === "/history") {
-    const history = await getUserHistory(number);
-    return msg.reply(`🕓 You have ${history.length} messages stored.`);
-  }
-
-  if (text.toLowerCase().startsWith("/pay")) {
-    const parts = text.split(" ");
-    const amount = parts[1];
-    if (!amount) {
-      return msg.reply("⚠️ Usage: /pay <amount>");
+// message handler (simple)
+client.on("message", async msg => {
+  try {
+    console.log("📩 incoming:", msg.from, msg.body);
+    if ((msg.body || "").toLowerCase() === "ping") {
+      await msg.reply("pong 🏓");
+      return;
     }
-
-    const phone = number.replace("@c.us", "");
-    console.log("💰 Payment attempt:", phone, amount);
-
-    try {
-      const res = await stkPush(phone, amount);
-      console.log("✅ Safaricom response:", res.data || res);
-      return msg.reply("📲 Payment request sent. Check your phone to complete.");
-    } catch (err) {
-      console.error("❌ M-Pesa error:", err.response?.data || err.message);
-      return msg.reply("❌ Payment failed. Please try again later.");
-    }
+    // keep minimal for now
+    await msg.reply("I got your message (debug).");
+  } catch (err) {
+    console.error("❌ message handler error:", err?.message || err);
   }
-
-  // 🤖 GPT response
-  await saveUserMessage(number, "user", text);
-  const reply = await handleMessage(number, text);
-  await saveUserMessage(number, "bot", reply);
-
-  msg.reply(reply);
 });
 
-// ✅ Lifecycle
-client.on("authenticated", () => console.log("🔑 WhatsApp authenticated."));
-client.on("auth_failure", (msg) =>
-  console.error("❌ Authentication failure:", msg)
-);
-client.on("disconnected", (reason) =>
-  console.log("⚠️ WhatsApp disconnected:", reason)
-);
-
-// ✅ Start
-client.initialize();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🌍 Server running on http://localhost:${PORT}`);
+// /qr route (serves image)
+let latestQR = null;
+app.get("/qr", async (req, res) => {
+  if (!latestQR) return res.send("<h3>No QR yet — check logs for 'QR generated'.</h3>");
+  try {
+    const src = await qrcode.toDataURL(latestQR);
+    return res.send(`<img src="${src}" />`);
+  } catch (e) {
+    return res.status(500).send("QR error: " + e.message);
+  }
 });
+
+// diagnostic helpers
+let readyFired = false;
+let watchdogTimer = null;
+
+function startReadyWatchdog() {
+  if (watchdogTimer) clearTimeout(watchdogTimer);
+  watchdogTimer = setTimeout(() => {
+    if (!readyFired) {
+      console.error("❌ READY DID NOT FIRE within 30s after AUTH. Dumping diagnostics...");
+      try {
+        const list = fs.existsSync(AUTH_PARENT) ? fs.readdirSync(AUTH_PARENT) : [];
+        console.log("Auth parent contents:", list);
+        list.forEach(name => {
+          try {
+            const p = path.join(AUTH_PARENT, name);
+            const s = fs.statSync(p);
+            console.log(" -", name, "mode", (s.mode & 0o777).toString(8), "uid", s.uid, "gid", s.gid, "size", s.size);
+            if (s.isDirectory()) {
+              const nested = fs.readdirSync(p).slice(0,50);
+              console.log("   nested:", nested);
+            }
+          } catch (e) { console.log("   stat failed for", name, e.message); }
+        });
+      } catch (e) {
+        console.error("Could not list auth folder:", e.message);
+      }
+      // Print reminder to check chromium logs & DEBUG env
+      console.log("🔎 Next: enable DEBUG=wwebjs* env, check Chromium errors in logs (Failed to launch...).");
+    } else {
+      console.log("✅ Ready fired within watchdog window.");
+    }
+  }, 30000);
+}
+
+// global process error printing
+process.on("unhandledRejection", (r) => console.error("unhandledRejection:", r));
+process.on("uncaughtException", (e) => console.error("uncaughtException:", e));
+
+client.initialize().catch(e => console.error("client.initialize() failed:", e?.message || e));
+
+app.listen(PORT, () => console.log(`🌍 HTTP server on port ${PORT} — /qr`));
 
