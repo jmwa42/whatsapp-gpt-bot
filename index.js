@@ -69,6 +69,77 @@ app.get("/qr", async (req, res) => {
 });
 
 // ✅ Ready event
+import pkg from "whatsapp-web.js";
+import qrcode from "qrcode";
+import dotenv from "dotenv";
+import express from "express";
+import fs from "fs";
+
+dotenv.config();
+
+import { handleMessage } from "./bot/gpt.js";
+import {
+  saveUserMessage,
+  isBanned,
+  banUser,
+  unbanUser,
+  getUserHistory,
+} from "./bot/storage.js";
+import { stkPush } from "./bot/mpesa.js";
+
+const { Client, LocalAuth } = pkg;
+
+// 🚀 Setup Express
+const app = express();
+
+// ✅ Fix session folder for Railway
+// ✅ Fix session folder for Railway
+// Don't include ".wwebjs_auth" in the path, LocalAuth will append it automatically
+const baseAuthPath = process.env.WA_DATA_PATH || "/tmp";
+
+try {
+  fs.mkdirSync(baseAuthPath, { recursive: true });
+  console.log("✅ Auth base folder ready:", baseAuthPath);
+} catch (err) {
+  console.error("⚠️ Auth folder setup issue:", err.message);
+}
+
+// 🚀 Setup WhatsApp client
+const client = new Client({
+  authStrategy: new LocalAuth({
+    dataPath: baseAuthPath,  // LocalAuth will create .wwebjs_auth inside this
+  }),
+  puppeteer: {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  },
+});
+
+// ✅ QR Code route
+let latestQR = null;
+client.on("qr", (qr) => {
+  latestQR = qr;
+  console.log("📱 QR code generated. Visit /qr to scan it.");
+});
+
+app.get("/qr", async (req, res) => {
+  if (!latestQR) {
+    return res.send("<h2>No QR generated yet. Check back soon.</h2>");
+  }
+  const qrImg = await qrcode.toDataURL(latestQR);
+  res.send(`
+    <html>
+      <head><title>WhatsApp QR</title></head>
+      <body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;">
+        <div>
+          <h2 style="color:#fff;text-align:center;">Scan QR with WhatsApp</h2>
+          <img src="${qrImg}" />
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+// ✅ Ready event
 client.on("ready", () => {
   console.log("✅ WhatsApp client is ready!");
 });
@@ -136,6 +207,27 @@ client.on("message", async (msg) => {
   await saveUserMessage(number, "bot", reply);
 
   msg.reply(reply);
+});
+
+client.on("authenticated", () => {
+  console.log("🔑 WhatsApp authenticated.");
+});
+
+client.on("auth_failure", msg => {
+  console.error("❌ Authentication failure:", msg);
+});
+
+client.on("disconnected", reason => {
+  console.log("⚠️ WhatsApp disconnected:", reason);
+});
+
+// ✅ Start WhatsApp client
+client.initialize();
+
+// ✅ Start Express server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🌍 Server running on http://localhost:${PORT}`);
 });
 
 client.on("authenticated", () => {
