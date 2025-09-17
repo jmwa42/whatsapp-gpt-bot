@@ -14,11 +14,23 @@ import {
   getUserHistory
 } from "./bot/storage.js";
 import { stkPush } from "./bot/mpesa.js";
+import fs from "fs";
 
 const { Client, LocalAuth } = pkg;
 
 // 🚀 Setup Express
 const app = express();
+
+
+
+const authPath = "/app/.wwebjs_auth";
+
+try {
+  fs.mkdirSync(authPath, { recursive: true });
+  fs.chownSync(authPath, process.getuid(), process.getgid()); // give current user rights
+} catch (err) {
+  console.warn("⚠️ Auth folder setup issue:", err.message);
+}
 
 // 🚀 Setup WhatsApp client
 const client = new Client({
