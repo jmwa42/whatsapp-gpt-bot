@@ -75,6 +75,7 @@ client.on("ready", () => {
 
 // ✅ WhatsApp message handler
 client.on("message", async (msg) => {
+  console.log("📩 Incoming message raw:", msg); // full object
   const number = msg.from;
   const text = msg.body.trim();
 
@@ -133,6 +134,18 @@ client.on("message", async (msg) => {
   await saveUserMessage(number, "bot", reply);
 
   msg.reply(reply);
+});
+
+client.on("authenticated", () => {
+  console.log("🔑 WhatsApp authenticated.");
+});
+
+client.on("auth_failure", msg => {
+  console.error("❌ Authentication failure:", msg);
+});
+
+client.on("disconnected", reason => {
+  console.log("⚠️ WhatsApp disconnected:", reason);
 });
 
 // ✅ Start WhatsApp client
