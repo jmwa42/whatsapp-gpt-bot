@@ -2,7 +2,7 @@
 set -e
 
 # Where the Railway volume will be mounted (set in Railway env or default)
-WA_PATH=${WA_DATA_PATH:-/mnt/data}
+WA_PATH=${WA_DATA_PATH:-/app/.wwebjs_auth}
 
 # ensure path exists
 mkdir -p "$WA_PATH"
