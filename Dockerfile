@@ -1,6 +1,7 @@
+# Use official Node image with Debian
 FROM node:18-bullseye
 
-# Install dependencies for Chromium
+# Install Chromium dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -33,10 +34,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright Chromium (much newer)
+# Install Playwright Chromium (always current)
 RUN npm install -g playwright && npx playwright install chromium
 
+# App directory
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY . .
