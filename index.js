@@ -2,6 +2,7 @@ import pkg from "whatsapp-web.js";
 import qrcode from "qrcode";
 import dotenv from "dotenv";
 import express from "express";
+import fs from "fs";
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ import {
   isBanned,
   banUser,
   unbanUser,
-  getUserHistory
+  getUserHistory,
 } from "./bot/storage.js";
 import { stkPush } from "./bot/mpesa.js";
 
@@ -20,28 +21,20 @@ const { Client, LocalAuth } = pkg;
 // 🚀 Setup Express
 const app = express();
 
-import fs from "fs";
-
-const authPath = "/app/.wwebjs_auth";
-
+// ✅ Fix session folder for Railway
+const authPath = process.env.WA_DATA_PATH || "/tmp/.wwebjs_auth";
 try {
-  // Ensure the auth directory exists
   fs.mkdirSync(authPath, { recursive: true });
-
-  // Fix permissions so current process user can write
-  if (process.getuid && process.getgid) {
-    fs.chownSync(authPath, process.getuid(), process.getgid());
-  }
-
   console.log("✅ Auth folder ready:", authPath);
 } catch (err) {
   console.error("⚠️ Auth folder setup issue:", err.message);
 }
 
-
 // 🚀 Setup WhatsApp client
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new LocalAuth({
+    dataPath: authPath,
+  }),
   puppeteer: {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
@@ -139,7 +132,7 @@ client.on("message", async (msg) => {
   msg.reply(reply);
 });
 
-// ✅ Start WhatsApp client (only once)
+// ✅ Start WhatsApp client
 client.initialize();
 
 // ✅ Start Express server
