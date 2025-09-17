@@ -1,10 +1,11 @@
-# Use official Node image with Debian (so we can apt-get install packages)
+# Use official Node LTS with Debian base
 FROM node:18-bullseye
 
-# Install Chromium & dependencies
+# Install Chromium & deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
+    libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
     libc6 \
@@ -31,27 +32,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     xdg-utils \
     chromium \
-    --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
-
 
 WORKDIR /app
 
+# Install deps
 COPY package*.json ./
-# use install so lockfile mismatches don't break builds; for strict reproducibility use npm ci after fixing lockfile
 RUN npm install --omit=dev
 
+# Copy rest
 COPY . .
 
-# copy entrypoint
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# ENV for puppeteer to use system chrome
+# Puppeteer envs → tell it to use system chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
+# If you want custom entrypoint script, keep this.
+# Make sure entrypoint.sh ends with: exec node index.js
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Or simpler (no script):
+# CMD ["node","index.js"]
 
