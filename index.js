@@ -26,7 +26,7 @@ const client = new Client({
   authStrategy: new LocalAuth({ dataPath: AUTH_PARENT }),
   puppeteer: {
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
-    headless: true,
+    headless: false,   // ⬅️ force visible browser, needed on some servers
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -35,11 +35,13 @@ const client = new Client({
       "--disable-gpu",
       "--no-zygote",
       "--disable-accelerated-2d-canvas",
-      "--enable-logging",
-      "--v=1"
+      "--disable-web-security",
+      "--window-size=1920,1080",
+      "--remote-debugging-port=9222"
     ],
   },
 });
+
 
 // event logging
 client.on("qr", qr => {
