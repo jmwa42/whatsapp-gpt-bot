@@ -34,28 +34,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
-# Work directory
+
 WORKDIR /app
 
-# Copy package files and install deps
 COPY package*.json ./
-RUN npm ci --only=production
+# use install so lockfile mismatches don't break builds; for strict reproducibility use npm ci after fixing lockfile
+RUN npm install --omit=dev
 
-# Copy app source
 COPY . .
 
-# Create session storage folder for WhatsApp auth
-RUN mkdir -p /app/.wwebjs_auth && chown -R node:node /app/.wwebjs_auth
+# copy entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Use non-root user for security
-USER node
-
-# Environment variables for puppeteer
+# ENV for puppeteer to use system chrome
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-# Expose port if API is served
 EXPOSE 3000
 
-# Start the bot
-CMD ["node", "index.js"]
+ENTRYPOINT ["/entrypoint.sh"]
+
