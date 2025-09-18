@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import pkg from "whatsapp-web.js";
-import { executablePath } from "playwright";
+import { chromium } from "playwright";
 
 const { Client, LocalAuth } = pkg;
 
@@ -21,7 +21,7 @@ let latestQR = null;
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: baseAuthPath }),
   puppeteer: {
-    executablePath: executablePath("chromium"),
+    executablePath: chromium.executablePath(),
     headless: true,
     args: [
       "--no-sandbox",
