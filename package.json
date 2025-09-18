@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-gpt-bot",
+  "name": "whatsapp-gpt-school-bot",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
