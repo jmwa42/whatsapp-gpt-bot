@@ -1,4 +1,7 @@
-# Install Chromium dependencies
+# Use Node.js with Debian
+FROM node:18-bullseye
+
+# Install Chromium & dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -27,17 +30,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     libxrender1 \
     xdg-utils \
-    wget \
+    chromium \
     --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy package manifests first
 COPY package*.json ./
+
+# Install deps (they may be overwritten by Railway mount, so entrypoint will check again)
 RUN npm install --omit=dev
 
+# Copy rest of source
 COPY . .
 
-EXPOSE 3000
-CMD ["node", "index.js"]
+# Copy entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Puppeteer/whatsapp-web.js should use system chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]
 

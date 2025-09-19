@@ -1,9 +1,15 @@
 #!/bin/sh
 set -e
 
-# Puppeteer flags for Railway’s containerized Chromium
-export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer"
+cd /app
 
-# Launch your app
+# If playwright or whatsapp-web.js missing, reinstall
+if [ ! -d node_modules/playwright ] || [ ! -d node_modules/whatsapp-web.js ]; then
+  echo "🔧 Installing missing node_modules..."
+  npm install --omit=dev
+  npx playwright install chromium
+fi
+
+echo "🚀 Starting app..."
 exec node index.js
 

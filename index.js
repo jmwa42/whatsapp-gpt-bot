@@ -1,65 +1,75 @@
 import express from "express";
 import qrcode from "qrcode";
-import fs from "fs";
-import dotenv from "dotenv";
-dotenv.config();
-
 import pkg from "whatsapp-web.js";
-import { chromium } from "playwright";
 
 const { Client, LocalAuth } = pkg;
 
-// ✅ Fix session storage
-const baseAuthPath = process.env.WA_DATA_PATH || "/app/.wwebjs_auth";
-fs.mkdirSync(baseAuthPath, { recursive: true });
-
-// 🚀 Express server
 const app = express();
-let latestQR = null;
+const PORT = process.env.PORT || 8080;
 
-// ✅ WhatsApp client
+let qrCodeData = null;
+
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: baseAuthPath }),
+  authStrategy: new LocalAuth({ dataPath: "./.wwebjs_auth" }),
   puppeteer: {
-    executablePath: chromium.executablePath(),
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
-      "--disable-gpu",
+      "--disable-accelerated-2d-canvas",
+      "--no-first-run",
       "--no-zygote",
-      "--disable-extensions",
+      "--single-process",
+      "--disable-gpu",
     ],
   },
 });
 
-// QR route
 client.on("qr", (qr) => {
-  latestQR = qr;
-  console.log("📱 QR code generated. Visit /qr to scan it.");
+  console.log("📱 QR code generated.");
+  qrCodeData = qr;
 });
 
-app.get("/qr", async (req, res) => {
-  if (!latestQR) return res.send("<h2>No QR yet. Check logs.</h2>");
-  const qrImg = await qrcode.toDataURL(latestQR);
-  res.send(`<html><body style="text-align:center"><h2>Scan QR</h2><img src="${qrImg}"/></body></html>`);
+client.on("ready", () => {
+  console.log("✅ WhatsApp client is ready!");
 });
 
-// Events
-client.on("authenticated", () => console.log("🔑 WhatsApp authenticated."));
-client.on("ready", () => console.log("✅ WhatsApp client is ready!"));
-client.on("disconnected", (r) => console.log("⚠️ Disconnected:", r));
+client.on("authenticated", () => {
+  console.log("🔑 WhatsApp authenticated.");
+});
+
+client.on("disconnected", (reason) => {
+  console.error("❌ WhatsApp disconnected:", reason);
+});
 
 client.on("message", async (msg) => {
-  console.log("📩 Received:", msg.from, msg.body);
+  console.log("💬 Message received:", msg.body);
   if (msg.body.toLowerCase() === "ping") {
     await msg.reply("pong 🏓");
   }
 });
 
-// Start
-client.initialize();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🌍 HTTP server on http://localhost:${PORT} — /qr`));
+// Express routes
+app.get("/", (req, res) => {
+  res.send("✅ WhatsApp bot server is running.");
+});
+
+app.get("/qr", async (req, res) => {
+  if (!qrCodeData) {
+    return res.status(404).send("QR not generated yet.");
+  }
+  const qrImage = await qrcode.toDataURL(qrCodeData);
+  res.send(`<img src="${qrImage}" />`);
+});
+
+app.listen(PORT, () => {
+  console.log(`🌍 HTTP server on port ${PORT} — /qr`);
+});
+
+// Initialize WhatsApp
+client.initialize().catch((err) => {
+  console.error("client.initialize() failed:", err);
+});
 
