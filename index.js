@@ -1,6 +1,9 @@
 import express from "express";
 import qrcode from "qrcode";
 import pkg from "whatsapp-web.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const { Client, LocalAuth } = pkg;
 
@@ -9,10 +12,12 @@ const PORT = process.env.PORT || 8080;
 
 let qrCodeData = null;
 
+// WhatsApp client with persistent auth
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "./.wwebjs_auth" }),
+  authStrategy: new LocalAuth({
+    dataPath: "./.wwebjs_auth",
+  }),
   puppeteer: {
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     headless: true,
     args: [
       "--no-sandbox",
@@ -27,49 +32,60 @@ const client = new Client({
   },
 });
 
-client.on("qr", (qr) => {
+// QR handler
+client.on("qr", async (qr) => {
   console.log("📱 QR code generated.");
-  qrCodeData = qr;
+  qrCodeData = await qrcode.toDataURL(qr);
 });
 
-client.on("ready", () => {
-  console.log("✅ WhatsApp client is ready!");
-});
-
+// Authenticated
 client.on("authenticated", () => {
   console.log("🔑 WhatsApp authenticated.");
 });
 
-client.on("disconnected", (reason) => {
-  console.error("❌ WhatsApp disconnected:", reason);
+// Ready
+client.on("ready", () => {
+  console.log("✅ WhatsApp client is ready!");
 });
 
-client.on("message", async (msg) => {
-  console.log("💬 Message received:", msg.body);
-  if (msg.body.toLowerCase() === "ping") {
-    await msg.reply("pong 🏓");
+// Message handler
+client.on("message", async (message) => {
+  console.log("💬 Message received:", message.body);
+
+  if (message.body.toLowerCase() === "hi") {
+    await message.reply("👋 Hello! How can I help you today?");
+  } else if (message.body.toLowerCase() === "status") {
+    await message.reply("✅ Bot is running fine on Railway!");
+  } else {
+    // Default echo
+    await message.reply(`You said: ${message.body}`);
   }
+
+  // 🔗 Example hook: forward to backend API
+  // try {
+  //   await fetch("http://django-backend:8000/api/messages/", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ from: message.from, text: message.body }),
+  //   });
+  // } catch (err) {
+  //   console.error("❌ Failed to forward to backend:", err.message);
+  // }
 });
 
-// Express routes
-app.get("/", (req, res) => {
-  res.send("✅ WhatsApp bot server is running.");
-});
-
-app.get("/qr", async (req, res) => {
-  if (!qrCodeData) {
-    return res.status(404).send("QR not generated yet.");
+// Express endpoint to show QR
+app.get("/qr", (req, res) => {
+  if (qrCodeData) {
+    res.send(`<img src="${qrCodeData}" />`);
+  } else {
+    res.send("❌ QR not yet generated, check logs.");
   }
-  const qrImage = await qrcode.toDataURL(qrCodeData);
-  res.send(`<img src="${qrImage}" />`);
 });
 
 app.listen(PORT, () => {
-  console.log(`🌍 HTTP server on port ${PORT} — /qr`);
+  console.log(`🌍 Server running on http://localhost:${PORT}`);
 });
 
-// Initialize WhatsApp
-client.initialize().catch((err) => {
-  console.error("client.initialize() failed:", err);
-});
+// Start WhatsApp client
+client.initialize();
 
