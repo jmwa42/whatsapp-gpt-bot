@@ -1,0 +1,10 @@
+[build]
+builder = "Dockerfile"
+
+[deploy]
+startCommand = "node index.js"
+
+[network]
+internal = true
+external = true # Bot needs to expose /qr for your browser
+

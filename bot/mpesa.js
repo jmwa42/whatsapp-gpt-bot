@@ -9,7 +9,7 @@ const CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET;
 const SHORTCODE = process.env.MPESA_SHORTCODE;
 const PASSKEY = process.env.MPESA_PASSKEY;
 const CALLBACK_URL = process.env.MPESA_CALLBACK_URL;         // <- your ngrok callback to Django
-const DJANGO_BASE = process.env.DJANGO_BASE || "http://127.0.0.1:8001"; // <- Django is on 8001
+const DJANGO_BASE = process.env.DJANGO_BASE || "http://127.0.0.1:8000";
 
 async function getAccessToken() {
   const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString("base64");
@@ -33,7 +33,18 @@ export async function stkPush(phone, amount, accountRef = "DashboardPayment") {
       ? "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
       : "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
 
-  const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+function getTimestamp() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const MM = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}${MM}${dd}${hh}${mm}${ss}`;
+}
+const timestamp = getTimestamp();
+
   const password = Buffer.from(SHORTCODE + PASSKEY + timestamp).toString("base64");
 
   const payload = {
