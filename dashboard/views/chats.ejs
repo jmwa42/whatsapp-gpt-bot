@@ -1,0 +1,16 @@
+<% layout('layout', { title: 'Chats' }) %>
+<h1>💬 Chat Logs</h1>
+<table class="table table-striped">
+  <thead><tr><th>Time</th><th>User</th><th>Role</th><th>Message</th></tr></thead>
+  <tbody>
+    <% chats.forEach(c => { %>
+      <tr>
+        <td><%= c.timestamp %></td>
+        <td><%= c.number %></td>
+        <td><%= c.role %></td>
+        <td><%= c.message %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
