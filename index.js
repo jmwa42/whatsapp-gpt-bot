@@ -38,23 +38,28 @@ app.get("/", (req, res) => {
 });
 
 app.get("/business", (req, res) => {
-  const biz = JSON.parse(fs.readFileSync("./bot/business.json", "utf8"));
+  let biz = {
+    opening_hours: "",
+    location: "",
+    contact: "",
+    price_list: {}
+  };
+
+  try {
+    if (fs.existsSync("./bot/business.json")) {
+      biz = JSON.parse(fs.readFileSync("./bot/business.json", "utf8"));
+    } else {
+      fs.mkdirSync("./bot", { recursive: true });
+      fs.writeFileSync("./bot/business.json", JSON.stringify(biz, null, 2));
+    }
+  } catch (err) {
+    console.error("❌ Error loading business.json:", err);
+  }
+
   res.render("business", { biz });
 });
 
-app.post("/business", (req, res) => {
-  const updated = {
-    opening_hours: req.body.opening_hours,
-    location: req.body.location,
-    contact: req.body.contact,
-    price_list: {}
-  };
-  req.body.services?.forEach((svc, i) => {
-    if (svc) updated.price_list[svc] = req.body.prices[i] || "";
-  });
-  fs.writeFileSync("./bot/business.json", JSON.stringify(updated, null, 2));
-  res.redirect("/business");
-});
+
 
 // ====================
 // WhatsApp bot setup

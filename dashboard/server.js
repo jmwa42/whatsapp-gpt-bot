@@ -25,17 +25,27 @@ app.get("/business", (req, res) => {
 
 app.post("/business", (req, res) => {
   const updated = {
-    opening_hours: req.body.opening_hours,
-    location: req.body.location,
-    contact: req.body.contact,
+    opening_hours: req.body.opening_hours || "",
+    location: req.body.location || "",
+    contact: req.body.contact || "",
     price_list: {}
   };
-  req.body.services?.forEach((svc, i) => {
-    if (svc) updated.price_list[svc] = req.body.prices[i] || "";
-  });
+
+  if (req.body.services) {
+    const services = Array.isArray(req.body.services) ? req.body.services : [req.body.services];
+    const prices = Array.isArray(req.body.prices) ? req.body.prices : [req.body.prices];
+
+    services.forEach((svc, i) => {
+      if (svc) updated.price_list[svc] = prices[i] || "";
+    });
+  }
+
+  fs.mkdirSync("./bot", { recursive: true });
   fs.writeFileSync("./bot/business.json", JSON.stringify(updated, null, 2));
+
   res.redirect("/business");
 });
+
 
 app.get("/chats", (req, res) => {
   const chats = fs.existsSync("./bot/chats.json")
