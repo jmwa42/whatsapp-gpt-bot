@@ -43,6 +43,7 @@ const filesToInit = [
   "faqs.json",
   "fees.json",
   "activities.json",
+  "transport.json",
   "meta.json"
 ];
 for (const f of filesToInit) {
@@ -180,6 +181,30 @@ async function sendMessageTo(number, message) {
   return client.sendMessage(jid, message);
 }
 
+//.........transport fees........
+
+function findTransportFee(message) {
+  if (!fs.existsSync(transportFile)) return null;
+  const fees = JSON.parse(fs.readFileSync(transportFile, "utf-8"));
+
+  const text = message.toLowerCase();
+
+  for (let fee of fees) {
+    const route = fee.route.toLowerCase();
+    const courts = fee.courts.toLowerCase().split(",").map(c => c.trim());
+
+    if (text.includes(route)) {
+      for (let court of courts) {
+        if (text.includes(court)) {
+          return `🚍 Transport for ${fee.route} (court ${court}) is Ksh. ${fee.fee}`;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+
 // ---------- Message handling ----------
 client.on('message', async (msg) => {
   try {
@@ -188,6 +213,19 @@ client.on('message', async (msg) => {
     const text = textRaw.trim();
 
     console.log('📩 Incoming:', number, text);
+    
+    // 1. Try Transport Fee first
+  let reply = findTransportFee(message);
+
+  // 2. Fall back to FAQ, fees, activities, or AI
+  if (!reply) {
+    reply = await handleSmartReply(message, from); 
+  }
+
+  // Send back to WhatsApp
+  await sendMessage(from, reply);
+
+  res.sendStatus(200);
 
     // store incoming to local chats.json (standardized shape)
     appendJson("chats.json", { number, from: 'user', text, timestamp: new Date().toISOString() });
@@ -305,6 +343,35 @@ client.on('message', async (msg) => {
       await saveUserMessage(number, 'bot', replyText);
       return;
     }
+    
+    // ------------------ Transport Fees ------------------
+app.get("/transport", (req, res) => {
+  const file = path.join(BOT_DATA_DIR, "transport.json");
+  let transport = [];
+  if (fs.existsSync(file)) {
+    try { transport = JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
+  }
+  res.render("transport", { transport });
+});
+
+app.post("/transport", (req, res) => {
+  const file = path.join(BOT_DATA_DIR, "transport.json");
+  let transport = [];
+  if (fs.existsSync(file)) {
+    try { transport = JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
+  }
+
+  transport.push({
+    route: req.body.route,
+    amount: req.body.amount,
+  });
+
+  fs.writeFileSync(file, JSON.stringify(transport, null, 2));
+  res.redirect("/transport");
+});
+
+
+
 
     // 3) Activities match with friendly keywords
     const activityKeywords = {

@@ -1,13 +1,24 @@
 
-<h1>💬 Chat Logs</h1>
-<table border="1" cellpadding="5">
-  <tr><th>User</th><th>Message</th><th>Time</th></tr>
-  <% chats.forEach(chat => { %>
+<h2>Chat Logs</h2>
+
+<table class="table table-striped">
+  <thead>
     <tr>
-      <td><%= chat.user %></td>
-      <td><%= chat.message %></td>
-      <td><%= chat.timestamp %></td>
+      <th>User</th>
+      <th>Message</th>
+      <th>Reply</th>
+      <th>Time</th>
     </tr>
-  <% }) %>
+  </thead>
+  <tbody>
+    <% chatlogs.forEach(log => { %>
+      <tr>
+        <td><%= log.user %></td>
+        <td><%= log.message %></td>
+        <td><%= log.reply %></td>
+        <td><%= log.time %></td>
+      </tr>
+    <% }) %>
+  </tbody>
 </table>
 
