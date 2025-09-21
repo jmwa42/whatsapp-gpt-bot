@@ -55,6 +55,7 @@ for (const f of filesToInit) {
     // default for faqs -> [], fees -> {}, activities -> {}, meta -> {}
     if (f === "faqs.json") initData = "[]";
     if (f === "payments.json") initData = "[]";
+    if (f === "transport.json") initData = "[]";
     fs.writeFileSync(file, initData);
   }
 }
