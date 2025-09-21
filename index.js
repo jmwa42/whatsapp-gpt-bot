@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import qrcode from 'qrcode';
 import pkg from 'whatsapp-web.js';
 import axios from 'axios';
+import expressLayouts from "express-ejs-layouts";
+
 
 // local bot helpers (your existing modules)
 import { handleMessage } from './bot/gpt.js';
@@ -19,6 +21,11 @@ import {
   getUserHistory,
 } from './bot/storage.js';
 import { stkPush } from './bot/mpesa.js';
+
+app.set("view engine", "ejs");
+app.set("views", "./dashboard/views");
+app.use(expressLayouts);
+app.set("layout", "layout"); // default layout file: views/layout.ejs
 
 const { Client, LocalAuth } = pkg;
 
