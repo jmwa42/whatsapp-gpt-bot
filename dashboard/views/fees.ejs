@@ -1,12 +1,19 @@
-<h1>💰 Edit School Fees</h1>
+<% layout('layout') -%>
+
+<h2>💰 School Fees</h2>
 <form method="POST" action="/fees">
-  <% Object.entries(fees).forEach(([cls, amt]) => { %>
-    <input name="classes" value="<%= cls %>" />
-    <input name="amounts" value="<%= amt %>" /><br>
-  <% }) %>
-  <input name="classes" placeholder="New Class" />
-  <input name="amounts" placeholder="Fee Amount" /><br>
-  <button type="submit">Save Fees</button>
+  <div id="fees-list">
+    <% Object.entries(fees).forEach(([cls, amt], i) => { %>
+      <div class="row mb-2">
+        <div class="col">
+          <input type="text" name="classes" value="<%= cls %>" class="form-control" placeholder="Class e.g. Grade 1">
+        </div>
+        <div class="col">
+          <input type="text" name="amounts" value="<%= amt %>" class="form-control" placeholder="Amount e.g. 15000">
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  <button type="submit" class="btn btn-primary">Save Fees</button>
 </form>
-<a href="/">⬅ Back</a>
 

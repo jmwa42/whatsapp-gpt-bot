@@ -1,11 +1,27 @@
-<h1>📅 School Activities</h1>
+<% layout('layout') -%>
+
+<h2>📅 School Activities</h2>
 <form method="POST" action="/activities">
-  <label>Opening Date: <input type="date" name="opening_date" value="<%= activities.opening_date %>" /></label><br>
-  <label>Closing Date: <input type="date" name="closing_date" value="<%= activities.closing_date %>" /></label><br>
-  <label>Parents Meeting: <input type="date" name="parents_meeting" value="<%= activities.parents_meeting %>" /></label><br>
-  <label>School Trip: <input type="date" name="school_trip" value="<%= activities.school_trip %>" /></label><br>
-  <label>Exams Start: <input type="date" name="exams_start" value="<%= activities.exams_start %>" /></label><br>
-  <button type="submit">Save Activities</button>
+  <div class="mb-3">
+    <label class="form-label">Opening Date</label>
+    <input type="date" name="opening_date" value="<%= activities.opening_date || '' %>" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Closing Date</label>
+    <input type="date" name="closing_date" value="<%= activities.closing_date || '' %>" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Parents Meeting</label>
+    <input type="text" name="parents_meeting" value="<%= activities.parents_meeting || '' %>" class="form-control" placeholder="e.g. 15th Nov 2025">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">School Trip</label>
+    <input type="text" name="school_trip" value="<%= activities.school_trip || '' %>" class="form-control" placeholder="e.g. 20th Oct 2025">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Exams Start</label>
+    <input type="text" name="exams_start" value="<%= activities.exams_start || '' %>" class="form-control" placeholder="e.g. 5th Dec 2025">
+  </div>
+  <button type="submit" class="btn btn-primary">Save Activities</button>
 </form>
-<a href="/">⬅ Back</a>
 

@@ -1,16 +1,26 @@
-<h1>🧠 Manage FAQs</h1>
-<ul>
-  <% faqs.forEach(f => { %>
-    <li><b>Q:</b> <%= f.question %> <br> <b>A:</b> <%= f.answer %></li>
-  <% }) %>
-</ul>
-<h3>Add New FAQ</h3>
-<form method="POST" action="/faqs">
-  <input name="question" placeholder="Enter question" />
-  <br>
-  <textarea name="answer" placeholder="Enter answer"></textarea>
-  <br>
-  <button type="submit">Add FAQ</button>
+<% layout('layout') -%>
+
+<h2>❓ Frequently Asked Questions</h2>
+<form method="POST" action="/faqs" class="mb-4">
+  <div class="mb-3">
+    <label class="form-label">Question</label>
+    <input type="text" name="question" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Answer</label>
+    <textarea name="answer" class="form-control" required></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Add FAQ</button>
 </form>
-<a href="/">⬅ Back</a>
+
+<table class="table table-bordered">
+  <thead>
+    <tr><th>Question</th><th>Answer</th></tr>
+  </thead>
+  <tbody>
+    <% faqs.forEach(f => { %>
+      <tr><td><%= f.question %></td><td><%= f.answer %></td></tr>
+    <% }) %>
+  </tbody>
+</table>
 
