@@ -1,22 +1,14 @@
-
+<%- include('layout') %>
 <h2>Chat Logs</h2>
-
 <table class="table table-striped">
-  <thead>
-    <tr>
-      <th>User</th>
-      <th>Message</th>
-      <th>Reply</th>
-      <th>Time</th>
-    </tr>
-  </thead>
+  <thead><tr><th>User</th><th>Message</th><th>From</th><th>Time</th></tr></thead>
   <tbody>
-    <% chatlogs.forEach(log => { %>
+    <% (chatlogs || []).forEach(log => { %>
       <tr>
-        <td><%= log.user %></td>
-        <td><%= log.message %></td>
-        <td><%= log.reply %></td>
-        <td><%= log.time %></td>
+        <td><%= log.number || log.user || '—' %></td>
+        <td><%= log.text || log.message || '—' %></td>
+        <td><%= log.from || 'user' %></td>
+        <td><%= log.timestamp || log.time || '—' %></td>
       </tr>
     <% }) %>
   </tbody>

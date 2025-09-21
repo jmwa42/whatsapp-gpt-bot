@@ -1,35 +1,18 @@
+<%- include('layout') %>
+<h2>Transport Fees</h2>
+<form method="POST" action="/dashboard/transport">
+  <input name="route" placeholder="Route (e.g. Road A)" required />
+  <input name="courts" placeholder="Courts (e.g. 1,2,3)" />
+  <input name="fee" placeholder="Fee (Ksh)" required />
+  <button type="submit">Add</button>
+</form>
 
-<div class="container mt-4">
-  <h2>Transport Fees</h2>
-  <form method="POST" action="/transport" class="mb-4">
-    <div class="row mb-2">
-      <div class="col-md-8">
-        <input type="text" name="route" class="form-control" placeholder="Route (e.g. Road A Courts 1–3)" required>
-      </div>
-      <div class="col-md-4">
-        <input type="number" name="amount" class="form-control" placeholder="Amount (Ksh)" required>
-      </div>
-    </div>
-    <button class="btn btn-primary">Add Route</button>
-  </form>
-
-  <h4>Existing Routes</h4>
-  <table class="table table-bordered">
-    <thead>
-      <tr><th>Route</th><th>Amount (Ksh)</th></tr>
-    </thead>
-    <tbody>
-      <% if (transport.length === 0) { %>
-        <tr><td colspan="2">No routes added yet.</td></tr>
-      <% } else { %>
-        <% transport.forEach(r => { %>
-          <tr>
-            <td><%= r.route %></td>
-            <td><%= r.amount %></td>
-          </tr>
-        <% }) %>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+<table>
+  <thead><tr><th>Route</th><th>Courts</th><th>Fee</th></tr></thead>
+  <tbody>
+    <% (transport || []).forEach(t => { %>
+      <tr><td><%= t.route %></td><td><%= t.courts %></td><td><%= t.fee %></td></tr>
+    <% }) %>
+  </tbody>
+</table>
 
