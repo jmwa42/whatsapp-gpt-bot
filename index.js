@@ -9,6 +9,7 @@ import qrcode from 'qrcode';
 import pkg from 'whatsapp-web.js';
 import axios from 'axios';
 import expressLayouts from "express-ejs-layouts";
+import bodyParser from "body-parser";
 
 // local bot helpers (your existing modules)
 import { handleMessage } from './bot/gpt.js';
@@ -49,7 +50,7 @@ const DJANGO_BASE = process.env.DJANGO_BASE || 'http://127.0.0.1:8000';
 const app = express();
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "dashboard/views"));
-app.use(expressLayouts);
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set("layout", "layout"); // default layout file: views/layout.ejs
 
 // parse forms + JSON
@@ -261,6 +262,57 @@ app.get('/payments', async (req, res) => {
     const payments = loadJson(path.join(BOT_DATA_DIR, 'payments.json'), []);
     return res.render('payments', { payments });
   }
+});
+
+// ------------------ Dashboard Menu ------------------
+app.get("/", (req, res) => {
+  res.render("index");
+});
+
+// ------------------ FAQs ------------------
+app.get("/faqs", (req, res) => {
+  const faqs = JSON.parse(fs.readFileSync("./bot/faqs.json", "utf8"));
+  res.render("faqs", { faqs });
+});
+
+app.post("/faqs", (req, res) => {
+  let faqs = JSON.parse(fs.readFileSync("./bot/faqs.json", "utf8"));
+  faqs.push({ question: req.body.question, answer: req.body.answer });
+  fs.writeFileSync("./bot/faqs.json", JSON.stringify(faqs, null, 2));
+  res.redirect("/faqs");
+});
+
+// ------------------ Fees ------------------
+app.get("/fees", (req, res) => {
+  const fees = JSON.parse(fs.readFileSync("./bot/fees.json", "utf8"));
+  res.render("fees", { fees });
+});
+
+app.post("/fees", (req, res) => {
+  const updated = {};
+  req.body.classes.forEach((cls, i) => {
+    if (cls) updated[cls] = req.body.amounts[i] || "";
+  });
+  fs.writeFileSync("./bot/fees.json", JSON.stringify(updated, null, 2));
+  res.redirect("/fees");
+});
+
+// ------------------ Activities ------------------
+app.get("/activities", (req, res) => {
+  const activities = JSON.parse(fs.readFileSync("./bot/activities.json", "utf8"));
+  res.render("activities", { activities });
+});
+
+app.post("/activities", (req, res) => {
+  const updated = {
+    opening_date: req.body.opening_date,
+    closing_date: req.body.closing_date,
+    parents_meeting: req.body.parents_meeting,
+    school_trip: req.body.school_trip,
+    exams_start: req.body.exams_start
+  };
+  fs.writeFileSync("./bot/activities.json", JSON.stringify(updated, null, 2));
+  res.redirect("/activities");
 });
 
 // Broadcast

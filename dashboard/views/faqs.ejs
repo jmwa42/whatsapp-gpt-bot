@@ -1,0 +1,16 @@
+<h1>🧠 Manage FAQs</h1>
+<ul>
+  <% faqs.forEach(f => { %>
+    <li><b>Q:</b> <%= f.question %> <br> <b>A:</b> <%= f.answer %></li>
+  <% }) %>
+</ul>
+<h3>Add New FAQ</h3>
+<form method="POST" action="/faqs">
+  <input name="question" placeholder="Enter question" />
+  <br>
+  <textarea name="answer" placeholder="Enter answer"></textarea>
+  <br>
+  <button type="submit">Add FAQ</button>
+</form>
+<a href="/">⬅ Back</a>
+

@@ -1,0 +1,12 @@
+<h1>💰 Edit School Fees</h1>
+<form method="POST" action="/fees">
+  <% Object.entries(fees).forEach(([cls, amt]) => { %>
+    <input name="classes" value="<%= cls %>" />
+    <input name="amounts" value="<%= amt %>" /><br>
+  <% }) %>
+  <input name="classes" placeholder="New Class" />
+  <input name="amounts" placeholder="Fee Amount" /><br>
+  <button type="submit">Save Fees</button>
+</form>
+<a href="/">⬅ Back</a>
+
