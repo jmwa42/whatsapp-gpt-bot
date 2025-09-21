@@ -1,0 +1,13 @@
+<% layout('layout') -%>
+<h1>💬 Chat Logs</h1>
+<table border="1" cellpadding="5">
+  <tr><th>User</th><th>Message</th><th>Time</th></tr>
+  <% chats.forEach(chat => { %>
+    <tr>
+      <td><%= chat.user %></td>
+      <td><%= chat.message %></td>
+      <td><%= chat.timestamp %></td>
+    </tr>
+  <% }) %>
+</table>
+
