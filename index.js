@@ -40,13 +40,11 @@ const DJANGO_BASE = process.env.DJANGO_BASE || 'http://127.0.0.1:8000';
 
 // express app
 const app = express();
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'dashboard', 'views'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.set("view engine", "ejs");
+app.set("views", "./dashboard/views");
 app.use(expressLayouts);
 app.set("layout", "layout"); // default layout file: views/layout.ejs
+
 
 // helper local-logging functions (for dashboard fallback)
 function appendJson(file, obj) {
