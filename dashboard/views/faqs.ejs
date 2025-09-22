@@ -1,25 +1,36 @@
 
+<h2>FAQs</h2>
 
-<h2>❓ Frequently Asked Questions</h2>
-<form method="POST" action="/faqs" class="mb-4">
-  <div class="mb-3">
-    <label class="form-label">Question</label>
-    <input type="text" name="question" class="form-control" required>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Answer</label>
-    <textarea name="answer" class="form-control" required></textarea>
-  </div>
-  <button type="submit" class="btn btn-primary">Add FAQ</button>
-</form>
+<% if (user && ['admin','staff'].includes(user.role)) { %>
+  <form method="POST" action="/faqs/add">
+    <input name="question" placeholder="Question" required />
+    <input name="answer" placeholder="Answer" required />
+    <button type="submit">Add FAQ</button>
+  </form>
+<% } %>
 
-<table class="table table-bordered">
-  <thead>
-    <tr><th>Question</th><th>Answer</th></tr>
-  </thead>
+<table>
+  <thead><tr><th>Question</th><th>Answer</th><th>Actions</th></tr></thead>
   <tbody>
-    <% faqs.forEach(f => { %>
-      <tr><td><%= f.question %></td><td><%= f.answer %></td></tr>
+    <% (faqs || []).forEach(f => { %>
+      <tr>
+        <td><%= f.question %></td>
+        <td><%= f.answer %></td>
+        <td>
+          <% if (user && ['admin','staff'].includes(user.role)) { %>
+            <form method="POST" action="/faqs/edit/<%= f.id %>" style="display:inline">
+              <input name="question" value="<%= f.question %>" />
+              <input name="answer" value="<%= f.answer %>" />
+              <button type="submit">Update</button>
+            </form>
+          <% } %>
+          <% if (user && user.role === 'admin') { %>
+            <form method="POST" action="/faqs/delete/<%= f.id %>" style="display:inline" onsubmit="return confirm('Delete this FAQ?')">
+              <button type="submit">Delete</button>
+            </form>
+          <% } %>
+        </td>
+      </tr>
     <% }) %>
   </tbody>
 </table>

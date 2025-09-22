@@ -23,6 +23,11 @@ import { stkPush } from './bot/mpesa.js';
 
 const { Client, LocalAuth } = pkg;
 
+import passport from 'passport';
+import { initAuth } from './auth.js';
+
+const { isAuthenticated, hasRole } = initAuth(app);
+
 // --- paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +37,32 @@ const BOT_DATA_DIR = path.join(__dirname, 'bot');
 // ensure directories exist
 if (!fs.existsSync(BOT_DATA_DIR)) fs.mkdirSync(BOT_DATA_DIR, { recursive: true });
 if (!fs.existsSync(VOLUME_DIR)) fs.mkdirSync(VOLUME_DIR, { recursive: true });
+
+// render login page
+app.get('/login', (req, res) => {
+  res.render('login', { error: null });
+});
+
+// handle login
+app.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.render('login', { error: info?.message || 'Invalid credentials' });
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.redirect('/');
+    });
+  })(req, res, next);
+});
+
+// logout
+app.get('/logout', (req, res) => {
+  req.logout(function(err) {
+    if (err) console.warn('logout error', err);
+    res.redirect('/login');
+  });
+});
+
 
 // init local JSON files so routes don’t crash
 const filesToInit = [
@@ -45,6 +76,7 @@ const filesToInit = [
   'activities.json',
   'transport.json',
   'meta.json',
+  "users.json",
 ];
 for (const f of filesToInit) {
   const file = path.join(BOT_DATA_DIR, f);
@@ -456,22 +488,50 @@ app.get('/payments', async (req, res) => {
 // --------- FAQ / Fees / Activities routes ----------
 
 // FAQs
+import { v4 as uuidv4 } from 'uuid';
+
+// show page (GET) — existing
 app.get('/faqs', (req, res) => {
   const faqs = readFileSafe('faqs.json', []);
-  const lastUpdated = readFileSafe('meta.json', {}).last_updated || null;
-  res.render('faqs', { faqs, lastUpdated });
+  res.render('faqs', { faqs, lastUpdated: readFileSafe('meta.json', {}).last_updated || null });
 });
-app.post('/faqs', (req, res) => {
+
+// add (POST) — admin+staff
+app.post('/faqs/add', hasRole(['admin','staff']), (req, res) => {
   const faqs = readFileSafe('faqs.json', []);
-  const question = req.body.question?.trim();
-  const answer = req.body.answer?.trim();
-  if (question && answer) {
-    faqs.push({ question, answer });
-    writeFileSafe('faqs.json', faqs);
-    updateMetaTimestamp();
-  }
+  const question = (req.body.question || '').trim();
+  const answer = (req.body.answer || '').trim();
+  if (!question || !answer) return res.redirect('/faqs');
+  faqs.push({ id: uuidv4(), question, answer, created_at: new Date().toISOString() });
+  writeFileSafe('faqs.json', faqs);
+  updateMetaTimestamp();
   res.redirect('/faqs');
 });
+
+// edit (POST) — admin+staff
+app.post('/faqs/edit/:id', hasRole(['admin','staff']), (req, res) => {
+  const id = req.params.id;
+  const faqs = readFileSafe('faqs.json', []);
+  const idx = faqs.findIndex(f => f.id === id);
+  if (idx === -1) return res.redirect('/faqs');
+  faqs[idx].question = (req.body.question || '').trim();
+  faqs[idx].answer = (req.body.answer || '').trim();
+  faqs[idx].updated_at = new Date().toISOString();
+  writeFileSafe('faqs.json', faqs);
+  updateMetaTimestamp();
+  res.redirect('/faqs');
+});
+
+// delete (POST) — admin only
+app.post('/faqs/delete/:id', hasRole(['admin']), (req, res) => {
+  const id = req.params.id;
+  let faqs = readFileSafe('faqs.json', []);
+  faqs = faqs.filter(f => f.id !== id);
+  writeFileSafe('faqs.json', faqs);
+  updateMetaTimestamp();
+  res.redirect('/faqs');
+});
+
 
 // Fees
 app.get('/fees', (req, res) => {
