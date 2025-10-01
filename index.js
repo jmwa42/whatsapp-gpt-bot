@@ -135,9 +135,14 @@ async function createUser({ username, password, role = 'admin' }) {
 
 // --- passport local auth setup ---
 const app = express();
-const SESSION_SECRET = process.env.SESSION_SECRET || 'dev_session_secret_change_me';
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.error('❌ SESSION_SECRET must be set in production');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: SESSION_SECRET,
+  secret: SESSION_SECRET || 'dev_session_secret_change_me',
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true, secure: process.env.NODE_ENV === 'production' }
@@ -190,7 +195,8 @@ function hasRole(roles = []) {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'dashboard', 'views'));
 app.use(expressLayouts);
-app.set('layout', 'layout');
+app.set('layout', false); 
+// app.set('layout', 'layout');
 
 // ----- WhatsApp client setup -----
 let latestQR = null;
@@ -249,14 +255,23 @@ function findTransportFee(text) {
     const t = String(text || '').toLowerCase();
     for (const fee of fees) {
       const route = String(fee.route || '').toLowerCase();
-      const courts = (String(fee.courts || '')).split(',').map(s => s.trim().toLowerCase());
+      // Safely handle courts as string or array
+      const courtsRaw = fee.courts || '';
+      const courts = (Array.isArray(courtsRaw) ? courtsRaw : String(courtsRaw).split(','))
+        .map(s => String(s).trim().toLowerCase())
+        .filter(Boolean);
+      
       if (t.includes(route)) {
         for (const court of courts) {
-          if (court && t.includes(court)) return `🚍 Transport for ${fee.route} (court ${court}) is Ksh ${fee.amount}`;
+          if (court && t.includes(court)) {
+            return `🚍 Transport for ${fee.route} (court ${court}) is Ksh ${fee.amount}`;
+          }
         }
       }
     }
-  } catch (e) { console.warn('findTransportFee error', e.message); }
+  } catch (e) { 
+    console.warn('findTransportFee error', e.message); 
+  }
   return null;
 }
 
@@ -445,10 +460,10 @@ app.get('/qr', async (req, res) => {
 app.get('/chatlogs', isAuthenticated, async (req, res) => {
   try {
     const { data } = await axios.get((process.env.DJANGO_BASE || 'http://127.0.0.1:8000') + '/api/chat/', { timeout: 4000 });
-    return res.render('chatlogs', { chats: data });
+    return res.render('chatlogs', { chatlogs: data });  // ✅ Correct variable name
   } catch (e) {
     const chats = readFileSafe('chats.json', []);
-    return res.render('chatlogs', { chats });
+    return res.render('chatlogs', { chatlogs });  // ✅ Correct variable name
   }
 });
 
@@ -461,6 +476,11 @@ app.get('/payments', isAuthenticated, async (req, res) => {
     const payments = readFileSafe('payments.json', []);
     return res.render('payments', { payments });
   }
+});
+
+//broadcast GET route
+app.get('/broadcast', isAuthenticated, (req, res) => {
+  res.render('broadcast');
 });
 
 // -------- FAQ CRUD --------
@@ -493,7 +513,21 @@ app.post('/activities', hasRole(['admin','staff']), (req, res) => { const update
 
 // -------- Transport CRUD --------
 app.get('/transport', isAuthenticated, (req, res) => { const transport = readFileSafe('transport.json', []); res.render('transport', { transport }); });
-app.post('/transport', hasRole(['admin']), (req, res) => { const transport = readFileSafe('transport.json', []); transport.push({ id: uuidv4(), route: req.body.route || '', courts: req.body.courts || '', amount: req.body.amount || '' }); writeFileSafe('transport.json', transport); const meta = readFileSafe('meta.json', {}); meta.last_updated = new Date().toISOString(); writeFileSafe('meta.json', meta); res.redirect('/transport'); });
+app.post('/dashboard/transport', hasRole(['admin']), (req, res) => { 
+  const transport = readFileSafe('transport.json', []); 
+  transport.push({ 
+    id: uuidv4(), 
+    route: req.body.route || '', 
+    courts: req.body.courts || '', 
+    amount: req.body.fee || ''  // FIX 2: Changed from req.body.amount
+  }); 
+  writeFileSafe('transport.json', transport); 
+  const meta = readFileSafe('meta.json', {}); 
+  meta.last_updated = new Date().toISOString(); 
+  writeFileSafe('meta.json', meta); 
+  res.redirect('/transport'); 
+});
+
 
 // -------- Broadcast/contacts --------
 app.post('/broadcast', hasRole(['admin','staff']), async (req, res) => {
@@ -564,11 +598,16 @@ app.get('/api/payments', (req, res) => { res.json(readFileSafe('payments.json', 
 const PORT = process.env.PORT || 3000;
 (async () => {
   try {
-    client.initialize();
-    app.listen(PORT, () => console.log(`🌍 Dashboard + Bot running on http://localhost:${PORT} (PORT env: ${process.env.PORT || 'not set'})`));
+    await client.initialize(); // Make this await and wrap properly
+    app.listen(PORT, () => 
+      console.log(`🌍 Dashboard + Bot running on http://localhost:${PORT}`)
+    );
   } catch (e) {
-    console.error('Failed to start:', e?.message || e);
-    process.exit(1);
+    console.error('Failed to start WhatsApp client:', e?.message || e);
+    // Still start server even if WhatsApp fails
+    app.listen(PORT, () => 
+      console.log(`🌍 Dashboard running (WhatsApp error) on http://localhost:${PORT}`)
+    );
   }
 })();
 
