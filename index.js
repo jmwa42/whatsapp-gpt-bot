@@ -14,6 +14,8 @@ import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { v4 as uuidv4 } from 'uuid';
+import feesRoutes from "./routes/fees.js";
+import chatlogRoutes from "./routes/chatlogs.js";
 
 // local bot helpers (must exist)
 import { handleMessage } from './bot/gpt.js';
@@ -455,6 +457,14 @@ app.get('/qr', async (req, res) => {
   try { const qrImg = await qrcode.toDataURL(latest); res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WhatsApp QR</title><meta http-equiv="refresh" content="10"></head><body style="display:flex;align-items:center;justify-content:center;height:100vh;background:#111;color:#fff;"><div style="text-align:center"><h3>Scan QR with WhatsApp</h3><img src="${qrImg}" style="max-width:90vw;max-height:80vh;"/></div></body></html>`); }
   catch (e) { console.error('QR render error', e.message || e); res.status(500).send('Error generating QR'); }
 });
+
+app.use("/fees", feesRoutes);
+app.use("/chatlogs", chatlogRoutes);
+
+app.get("/", (req, res) => res.render("dashboard"));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
 
 // Chatlogs (requires auth)
 app.get('/chatlogs', isAuthenticated, async (req, res) => {

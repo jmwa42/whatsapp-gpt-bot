@@ -1,13 +1,20 @@
-<h2>Chat Logs</h2>
-<table class="table table-striped">
-  <thead><tr><th>User</th><th>Message</th><th>From</th><th>Time</th></tr></thead>
+<h2>💬 Chat Logs</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>User Phone</th>
+      <th>Message</th>
+      <th>Response</th>
+      <th>Time</th>
+    </tr>
+  </thead>
   <tbody>
-    <% (chatlogs || []).forEach(log => { %>
+    <% logs.forEach(log => { %>
       <tr>
-        <td><%= log.number || log.user || '—' %></td>
-        <td><%= log.text || log.message || '—' %></td>
-        <td><%= log.from || 'user' %></td>
-        <td><%= log.timestamp || log.time || '—' %></td>
+        <td><%= log.userPhone %></td>
+        <td><%= log.message %></td>
+        <td><%= log.response %></td>
+        <td><%= log.createdAt.toLocaleString() %></td>
       </tr>
     <% }) %>
   </tbody>

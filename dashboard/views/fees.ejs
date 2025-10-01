@@ -1,19 +1,77 @@
-
-
 <h2>💰 School Fees</h2>
 <form method="POST" action="/fees">
-  <div id="fees-list">
-    <% Object.entries(fees).forEach(([cls, amt], i) => { %>
-      <div class="row mb-2">
-        <div class="col">
-          <input type="text" name="classes" value="<%= cls %>" class="form-control" placeholder="Class e.g. Grade 1">
-        </div>
-        <div class="col">
-          <input type="text" name="amounts" value="<%= amt %>" class="form-control" placeholder="Amount e.g. 15000">
-        </div>
-      </div>
-    <% }) %>
-  </div>
-  <button type="submit" class="btn btn-primary">Save Fees</button>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Term 1 Fees</th>
+                <th>Term 2 Fees</th>
+                <th>Term 3 Fees</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="fees-tbody">
+            <% fees.forEach((fee, i) => { %>
+                <tr class="fee-row">
+                    <td><input type="text" name="fees[<%= i %>][className]" value="<%= fee.className %>" class="form-control" placeholder="e.g., Grade 1" required></td>
+                    <td><input type="number" name="fees[<%= i %>][term1]" value="<%= fee.term1 %>" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                    <td><input type="number" name="fees[<%= i %>][term2]" value="<%= fee.term2 %>" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                    <td><input type="number" name="fees[<%= i %>][term3]" value="<%= fee.term3 %>" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                    <td><input type="text" class="form-control total-field" value="<%= fee.total %>" readonly></td>
+                    <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    <button type="button" id="add-row-btn" class="btn btn-success">Add Class</button>
+    <button type="submit" class="btn btn-primary">Save Fees</button>
 </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.getElementById('fees-tbody');
+        const addRowBtn = document.getElementById('add-row-btn');
+
+        function calculateTotal(row) {
+            const inputs = row.querySelectorAll('.fee-input');
+            const totalField = row.querySelector('.total-field');
+            let total = 0;
+            inputs.forEach(input => {
+                total += Number(input.value) || 0;
+            });
+            totalField.value = total;
+        }
+
+        function attachRowEventListeners(row) {
+            row.querySelectorAll('.fee-input').forEach(input => {
+                input.addEventListener('input', () => calculateTotal(row));
+            });
+            row.querySelector('.remove-row-btn').addEventListener('click', () => {
+                row.remove();
+            });
+        }
+
+        document.querySelectorAll('.fee-row').forEach(row => {
+            attachRowEventListeners(row);
+            calculateTotal(row);
+        });
+
+        addRowBtn.addEventListener('click', () => {
+            const newIndex = tbody.children.length;
+            const newRow = document.createElement('tr');
+            newRow.classList.add('fee-row');
+            newRow.innerHTML = `
+                <td><input type="text" name="fees[${newIndex}][className]" class="form-control" placeholder="e.g., Grade 1" required></td>
+                <td><input type="number" name="fees[${newIndex}][term1]" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                <td><input type="number" name="fees[${newIndex}][term2]" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                <td><input type="number" name="fees[${newIndex}][term3]" class="form-control fee-input" placeholder="e.g., 15000" required></td>
+                <td><input type="text" class="form-control total-field" readonly></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button></td>
+            `;
+            tbody.appendChild(newRow);
+            attachRowEventListeners(newRow);
+        });
+    });
+</script>
 
